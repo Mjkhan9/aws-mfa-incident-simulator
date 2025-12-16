@@ -1,8 +1,17 @@
 # AWS MFA Incident Response Simulator
 
-Operational incident simulation for MFA authentication failures, with detection, alerting, and documented response procedures.
+Dual-mode incident detection system for MFA authentication failures: supports both **live detection** from CloudTrail events and **simulation mode** for testing and demos.
 
 I built this to demonstrate incident response workflows—not just infrastructure building, but the operational thinking required to detect, diagnose, and resolve authentication failures in production environments.
+
+## Operating Modes
+
+| Mode | Trigger | Use Case |
+|------|---------|----------|
+| **Detector** | Real CloudTrail events via EventBridge | Production monitoring |
+| **Simulator** | Manual CLI invoke with test payload | Demos, testing, development |
+
+The Lambda automatically detects which mode based on the event structure.
 
 [![AWS](https://img.shields.io/badge/AWS-CloudTrail%20|%20EventBridge%20|%20Lambda-FF9900?logo=amazon-aws)](https://aws.amazon.com/)
 
@@ -71,12 +80,18 @@ Simulates **3 real-world MFA failure scenarios** with:
 │                         Detection Pipeline                          │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│   CloudTrail ──────▶ EventBridge ──────▶ Lambda ──────▶ DynamoDB   │
-│   (API Logs)         (Real-time)        (Processor)    (Incidents)  │
-│                           │                                │        │
-│                           ▼                                ▼        │
-│                         SNS ◀────────────────────── CloudWatch      │
-│                      (Alerts)                       (Dashboard)     │
+│   ┌─────────────┐                                                   │
+│   │ DETECTOR    │  CloudTrail ──▶ EventBridge ──┐                   │
+│   │ MODE        │  (Real events)  (Rules)       │                   │
+│   └─────────────┘                               │                   │
+│                                                 ▼                   │
+│   ┌─────────────┐                           Lambda ──▶ DynamoDB    │
+│   │ SIMULATOR   │  CLI Invoke ─────────────▶ (Dual    (Incidents)  │
+│   │ MODE        │  (Test payload)             Mode)        │        │
+│   └─────────────┘                               │          │        │
+│                                                 ▼          ▼        │
+│                                               SNS ◀── CloudWatch    │
+│                                            (Alerts)   (Dashboard)   │
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │                       Analysis Layer                                │
@@ -87,6 +102,10 @@ Simulates **3 real-world MFA failure scenarios** with:
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+**Dual-mode detection:**
+- **Detector Mode**: Processes real CloudTrail JSON from EventBridge
+- **Simulator Mode**: Accepts test payloads for demos and development
 
 **Design separation:**
 - **EventBridge** = Real-time detection

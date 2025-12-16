@@ -6,7 +6,7 @@ Verbatim-ready narratives for discussing this project in interviews.
 
 ## The 30-Second Pitch
 
-> "I built an incident response simulator for MFA authentication failures. It generates realistic failure patterns—token issues, rate limiting, policy misconfigurations—and I documented the full detection-to-resolution workflow for each. The goal wasn't just to build infrastructure; it was to demonstrate I can operate systems, read logs, and debug systematically."
+> "I built a dual-mode incident detection system for MFA authentication failures. It can either process real CloudTrail events through EventBridge for live detection, or accept test payloads for demos. It handles token issues, rate limiting, and policy misconfigurations—and I documented the full detection-to-resolution workflow for each. The goal wasn't just infrastructure; it was demonstrating I can operate systems, read logs, and debug systematically."
 
 ---
 
@@ -27,6 +27,18 @@ Verbatim-ready narratives for discussing this project in interviews.
 ---
 
 ## Anticipated Questions & Answers
+
+### Q: "Can you demo this detecting a real failed login right now?"
+
+> "Yes—the Lambda is dual-mode. It accepts both real CloudTrail events from EventBridge and manual test payloads. In my dev account, I typically trigger it manually for demos to avoid generating noise in CloudTrail. But the EventBridge rules are connected and enabled, so if you fail a login in the console, EventBridge will route it to the Lambda and you'll see a new incident in DynamoDB within a minute or two. The CloudTrail-to-EventBridge path has some latency—usually 1-5 minutes—which is why I also have the manual trigger for quick demos."
+
+---
+
+### Q: "How do you handle the delay in CloudTrail events?"
+
+> "CloudTrail events delivered via EventBridge are near-real-time—typically under a minute for management events, though there can be delays up to 5-15 minutes in some cases. For true real-time blocking, you'd need preventative controls like SCPs or session policies that don't rely on reactive detection. This system is designed for detection and response, not prevention. In an interview context, I'd clarify that EventBridge is faster than S3 delivery of CloudTrail logs, but it's still reactive."
+
+---
 
 ### Q: "Why did you choose these three scenarios?"
 

@@ -61,20 +61,20 @@ resource "aws_lambda_permission" "eventbridge_access_denied" {
   source_arn    = aws_cloudwatch_event_rule.access_denied.arn
 }
 
-# Event targets (disabled by default - enable for real CloudTrail integration)
-# Uncomment these to enable real-time detection from CloudTrail
+# Event targets for real CloudTrail integration
+# These connect EventBridge rules to the Lambda for live detection
 
-# resource "aws_cloudwatch_event_target" "console_login_to_lambda" {
-#   rule      = aws_cloudwatch_event_rule.console_login_failure.name
-#   target_id = "process-console-login-failure"
-#   arn       = aws_lambda_function.simulator.arn
-# }
+resource "aws_cloudwatch_event_target" "console_login_to_lambda" {
+  rule      = aws_cloudwatch_event_rule.console_login_failure.name
+  target_id = "process-console-login-failure"
+  arn       = aws_lambda_function.simulator.arn
+}
 
-# resource "aws_cloudwatch_event_target" "access_denied_to_lambda" {
-#   rule      = aws_cloudwatch_event_rule.access_denied.name
-#   target_id = "process-access-denied"
-#   arn       = aws_lambda_function.simulator.arn
-# }
+resource "aws_cloudwatch_event_target" "access_denied_to_lambda" {
+  rule      = aws_cloudwatch_event_rule.access_denied.name
+  target_id = "process-access-denied"
+  arn       = aws_lambda_function.simulator.arn
+}
 
 output "eventbridge_rule_console_login" {
   description = "EventBridge rule for console login failures"
