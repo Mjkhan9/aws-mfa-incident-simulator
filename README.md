@@ -27,7 +27,7 @@ Simulates **3 real-world MFA failure scenarios** with:
 | **Real-time Detection** | EventBridge rules catching CloudTrail events as they occur |
 | **Post-hoc Analysis** | CloudWatch Insights queries for investigation |
 | **Alerting Pipeline** | SNS notifications on incident detection |
-| **Assisted Remediation** | Constrained auto-response for low-risk scenarios |
+| **Incident Tracking** | Automated status updates and alerting for response teams |
 | **Incident Runbooks** | Step-by-step resolution documentation with console evidence |
 
 ---
@@ -56,7 +56,7 @@ Simulates **3 real-world MFA failure scenarios** with:
 - Same `userIdentity.userName`
 - Same `sourceIPAddress`
 
-**Response:** Assisted remediation—incident state updated after cooldown, alert sent, resolution logged. *Does not modify IAM directly.*
+**Response:** Automated incident tracking—status updated in DynamoDB after cooldown, SNS alert sent, event logged for investigation. *Tracks and alerts; does not modify IAM directly.*
 
 ---
 
