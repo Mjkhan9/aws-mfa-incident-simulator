@@ -142,13 +142,17 @@ aws iam deactivate-mfa-device \
 
 ---
 
-## Console Evidence (Screenshots)
+## Console Evidence
 
-| Screenshot | Description |
-|------------|-------------|
-| `screenshots/cloudtrail-mfa-failure.png` | CloudTrail event showing failed login |
-| `screenshots/insights-mfa-query.png` | CloudWatch Insights query results |
-| `screenshots/iam-mfa-device.png` | IAM console showing MFA device status |
+Detection evidence is captured in DynamoDB with full event context:
+
+| Evidence | Location |
+|----------|----------|
+| Incident records with detection signals | `screenshots/dynamodb-incidents.png` |
+| EventBridge rules for real-time detection | `screenshots/eventbridge-rules.png` |
+| Lambda function processing events | `screenshots/lambda-function.png` |
+
+Each DynamoDB record contains the `detection_signal` field with CloudTrail event details including `MFAUsed`, `errorMessage`, and `sourceIPAddress`.
 
 ---
 

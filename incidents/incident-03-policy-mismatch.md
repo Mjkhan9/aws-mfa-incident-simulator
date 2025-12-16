@@ -203,14 +203,17 @@ Escalate to Cloud Security team if:
 
 ---
 
-## Console Evidence (Screenshots)
+## Console Evidence
 
-| Screenshot | Description |
-|------------|-------------|
-| `screenshots/access-denied-event.png` | CloudTrail showing AccessDenied with MFA present |
-| `screenshots/policy-simulator.png` | IAM Policy Simulator showing denial reason |
-| `screenshots/policy-before.png` | Incorrect policy condition |
-| `screenshots/policy-after.png` | Corrected policy condition |
+| Evidence | Location |
+|----------|----------|
+| Incident records with policy mismatch details | `screenshots/dynamodb-incidents.png` |
+| EventBridge rule for AccessDenied detection | `screenshots/eventbridge-rules.png` |
+
+Each policy mismatch incident in DynamoDB includes the `detection_signal` with:
+- `attempted_action` - The action that was denied
+- `condition_evaluated` - The IAM condition that failed (`aws:MultiFactorAuthPresent`)
+- `resource` - The target resource ARN
 
 ---
 

@@ -172,14 +172,15 @@ Resolution time is automatically emitted to CloudWatch and appears in the dashbo
 
 ---
 
-## Console Evidence (Screenshots)
+## Console Evidence
 
-| Screenshot | Description |
-|------------|-------------|
-| `screenshots/rate-limit-detection.png` | CloudWatch Insights showing failure pattern |
-| `screenshots/dynamodb-incident.png` | DynamoDB item showing incident record |
-| `screenshots/sns-notification.png` | SNS notification on resolution |
-| `screenshots/dashboard-resolved.png` | Dashboard showing resolution metric |
+| Evidence | Location |
+|----------|----------|
+| Incident records (including RESOLVED status) | `screenshots/dynamodb-incidents.png` |
+| SNS topic for alerts | `screenshots/sns-topic.png` |
+| CloudWatch dashboard with resolution metrics | `screenshots/cloudwatch-dashboard.png` |
+
+The DynamoDB table shows both OPEN and RESOLVED incidents, with `resolution_time_seconds` populated for resolved rate-limiting events.
 
 ---
 
