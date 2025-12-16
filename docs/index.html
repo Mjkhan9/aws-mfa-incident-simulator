@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS MFA Incident Response Simulator — Detection, Investigation, and Assisted Remediation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.7;
+            color: #2c3e50;
+            background: #ffffff;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+        
+        header {
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            font-weight: 400;
+        }
+        
+        h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #34495e;
+            margin-top: 1.8rem;
+            margin-bottom: 0.8rem;
+        }
+        
+        p {
+            margin-bottom: 1.2rem;
+            color: #34495e;
+        }
+        
+        .problem-statement {
+            background: #fff5f5;
+            border-left: 4px solid #e74c3c;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+        
+        .problem-statement p {
+            margin-bottom: 0.8rem;
+        }
+        
+        .problem-statement p:last-child {
+            margin-bottom: 0;
+        }
+        
+        code {
+            background: #f8f9fa;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+        }
+        
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1.2rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+        
+        .signal-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 1.2rem;
+            margin: 1.2rem 0;
+        }
+        
+        .signal-box h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .signal-box code {
+            background: #ffffff;
+            color: #495057;
+        }
+        
+        .flow-diagram {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        
+        .philosophy-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+        
+        .philosophy-box h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 0.8rem;
+        }
+        
+        .philosophy-box ul {
+            margin-left: 1.5rem;
+            margin-top: 0.8rem;
+        }
+        
+        .philosophy-box li {
+            margin-bottom: 0.5rem;
+            color: #34495e;
+        }
+        
+        .what-is-not {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+        
+        .what-is-not h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e65100;
+            margin-bottom: 0.8rem;
+        }
+        
+        .what-is-not ul {
+            margin-left: 1.5rem;
+            margin-top: 0.8rem;
+        }
+        
+        .what-is-not li {
+            margin-bottom: 0.5rem;
+            color: #34495e;
+        }
+        
+        .runbook-excerpt {
+            background: #f0f4f8;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .runbook-excerpt h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        
+        .runbook-excerpt .step {
+            margin-bottom: 1.2rem;
+        }
+        
+        .runbook-excerpt .step-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .links {
+            background: #f8f9fa;
+            border-top: 2px solid #dee2e6;
+            padding: 1.5rem;
+            margin-top: 3rem;
+            border-radius: 6px;
+        }
+        
+        .links h3 {
+            margin-top: 0;
+        }
+        
+        .links ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .links li {
+            margin-bottom: 0.8rem;
+        }
+        
+        .links a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25em 0.6em;
+            font-size: 0.85em;
+            font-weight: 600;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+        
+        .badge-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge-no-remediation {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .badge-assisted {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        ul, ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1.2rem;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+            color: #34495e;
+        }
+        
+        .note {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1rem;
+            margin: 1.2rem 0;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+        
+        .note strong {
+            color: #1976d2;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.6rem;
+            }
+            
+            h2 {
+                font-size: 1.4rem;
+            }
+            
+            pre, .flow-diagram {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AWS MFA Incident Response Simulator</h1>
+            <p class="subtitle">Detection, Investigation, and Assisted Remediation</p>
+        </header>
+
+        <section>
+            <h2>Problem Statement</h2>
+            <div class="problem-statement">
+                <p><strong>MFA failures are noisy, ambiguous, and operationally expensive.</strong></p>
+                <p>When users report "can't log in," operations teams face a diagnostic challenge: Is this a token expiration? Rate limiting? A policy misconfiguration? AWS CloudTrail emits events, but doesn't explicitly label root causes—you must infer patterns from event structure.</p>
+                <p>This project demonstrates production-grade incident response workflows: detecting patterns in CloudTrail, correlating signals, and applying operational judgment about what to automate versus what requires human intervention.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Detection Logic</h2>
+            <p>The system detects three distinct MFA failure patterns using CloudTrail event analysis:</p>
+
+            <h3>1. MFA Authentication Failure (Consistent with Token Expiration)</h3>
+            <div class="signal-box">
+                <h4>Detection Signal</h4>
+                <p><code>ConsoleLogin</code> event with:</p>
+                <ul>
+                    <li><code>additionalEventData.MFAUsed = "No"</code></li>
+                    <li><code>errorMessage</code> present (typically "Failed authentication")</li>
+                    <li>Optional correlation: Prior successful MFA login within 15-minute window</li>
+                </ul>
+            </div>
+            <p><strong>Why "consistent with" matters:</strong> AWS doesn't emit "token expired" explicitly. The pattern—failed login with MFAUsed=No, especially after a recent successful MFA session—is consistent with token expiration, but could also indicate user error or clock drift. The language reflects operational uncertainty.</p>
+
+            <h3>2. Rate Limiting / Account Lockout</h3>
+            <div class="signal-box">
+                <h4>Detection Signal</h4>
+                <p>Pattern: 5+ failed <code>ConsoleLogin</code> events within 60-second window</p>
+                <ul>
+                    <li>Same <code>userIdentity.userName</code></li>
+                    <li>Same <code>sourceIPAddress</code></li>
+                    <li>All events have <code>errorMessage</code></li>
+                </ul>
+            </div>
+            <p><strong>Detection method:</strong> Rate limiting is detected via CloudWatch Insights queries (post-hoc analysis) rather than real-time EventBridge rules, as it requires aggregating events over a time window. The pattern can also be simulated for testing.</p>
+            <p>When detected, this triggers automated incident tracking and alerting. After a cooldown period (5 minutes default), the responder Lambda updates the incident status to RESOLVED and sends a notification—but does not modify IAM or unlock accounts.</p>
+
+            <h3>3. Policy Mismatch (MFA Present but Action Denied)</h3>
+            <div class="signal-box">
+                <h4>Detection Signal</h4>
+                <p><code>AccessDenied</code> error with:</p>
+                <ul>
+                    <li><code>errorCode = "AccessDenied"</code></li>
+                    <li><code>userIdentity.sessionContext.attributes.mfaAuthenticated = "true"</code></li>
+                    <li>Action attempted visible in <code>requestParameters</code></li>
+                </ul>
+            </div>
+            <p>This indicates a policy condition mismatch—the user authenticated with MFA, but the IAM policy condition (e.g., <code>aws:MultiFactorAuthPresent</code>) isn't being satisfied. Common causes include using <code>StringEquals</code> instead of <code>Bool</code> for boolean conditions.</p>
+
+            <div class="note">
+                <strong>Detection Architecture:</strong> The system operates in dual mode—it can process real CloudTrail events from EventBridge (detector mode) or accept synthetic test payloads (simulator mode). The Lambda automatically detects which mode based on event structure.
+            </div>
+        </section>
+
+        <section>
+            <h2>Incident Flow</h2>
+            <div class="flow-diagram">┌─────────────────────────────────────────────────────────────────────┐
+│                         Detection Pipeline                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   ┌─────────────┐                                                   │
+│   │ DETECTOR    │  CloudTrail ──▶ EventBridge ──┐                   │
+│   │ MODE        │  (Real events)  (Rules)       │                   │
+│   └─────────────┘                               │                   │
+│                                                 ▼                   │
+│   ┌─────────────┐                           Lambda ──▶ DynamoDB    │
+│   │ SIMULATOR   │  CLI Invoke ─────────────▶ (Dual    (Incidents)  │
+│   │ MODE        │  (Test payload)             Mode)        │        │
+│   └─────────────┘                               │          │        │
+│                                                 ▼          ▼        │
+│                                               SNS ◀── CloudWatch    │
+│                                            (Alerts)   (Dashboard)   │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                       Analysis Layer                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   CloudWatch Insights ──────▶ Post-hoc queries for investigation   │
+│   Dashboard ────────────────▶ Situational awareness (4 widgets)    │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘</div>
+
+            <p><strong>Detection → Alert → Investigation → Resolution</strong></p>
+            <ol>
+                <li><strong>Detection:</strong> EventBridge rules match CloudTrail patterns, or simulator generates synthetic incidents</li>
+                <li><strong>Alert:</strong> Lambda stores incident in DynamoDB and publishes SNS notification</li>
+                <li><strong>Investigation:</strong> CloudWatch Insights queries provide post-hoc analysis; dashboard shows real-time metrics</li>
+                <li><strong>Resolution:</strong> For rate limiting, responder Lambda updates status after cooldown; other scenarios require manual intervention</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>Runbook Excerpt</h2>
+            <div class="runbook-excerpt">
+                <h4>Rate Limiting / Account Lockout</h4>
+                <p><span class="badge badge-high">HIGH</span> <span class="badge badge-assisted">Assisted Remediation</span></p>
+                
+                <div class="step">
+                    <div class="step-title">Step 1: Quantify the failure pattern</div>
+                    <p>Query CloudWatch Insights for multiple failed ConsoleLogin attempts:</p>
+                    <pre><code>fields @timestamp, userIdentity.userName, sourceIPAddress, errorMessage
+| filter eventName = "ConsoleLogin"
+| filter ispresent(errorMessage)
+| stats count(*) as failure_count by userIdentity.userName, sourceIPAddress, bin(5m)
+| filter failure_count >= 5
+| sort failure_count desc</code></pre>
+                </div>
+
+                <div class="step">
+                    <div class="step-title">Step 2: Analyze source IP</div>
+                    <p>Determine if this is legitimate user error or potential attack. Check:</p>
+                    <ul>
+                        <li>Is source IP from known corporate range?</li>
+                        <li>Is user agent consistent with browser?</li>
+                        <li>Geographic location reasonable?</li>
+                    </ul>
+                </div>
+
+                <div class="step">
+                    <div class="step-title">Resolution: Assisted Remediation</div>
+                    <p>The responder Lambda handles this scenario:</p>
+                    <ol>
+                        <li>Detects incident is past cooldown period (5 minutes default)</li>
+                        <li>Updates incident status in DynamoDB to <code>RESOLVED</code></li>
+                        <li>Sends SNS notification that lockout has cleared</li>
+                        <li>Logs resolution time for metrics</li>
+                    </ol>
+                    <p><strong>What it does NOT do:</strong></p>
+                    <ul>
+                        <li>Does not modify IAM user</li>
+                        <li>Does not unlock any account</li>
+                        <li>Does not reset credentials</li>
+                    </ul>
+                </div>
+            </div>
+            <p><em>Full runbooks available in the repository: <code>incidents/incident-02-rate-limiting.md</code></em></p>
+        </section>
+
+        <section>
+            <h2>Design Philosophy</h2>
+            <div class="philosophy-box">
+                <h4>Why Assisted Remediation</h4>
+                <p>This system demonstrates <strong>constrained automation</strong>—automating state tracking and alerting, but not destructive actions. This reflects production operational judgment:</p>
+                <ul>
+                    <li><strong>Blast radius control:</strong> Updating DynamoDB status is low-risk; modifying IAM policies or unlocking accounts requires safeguards</li>
+                    <li><strong>Remediation loops:</strong> Full automation can create feedback loops (e.g., auto-unlocking an account under attack)</li>
+                    <li><strong>Audit trail:</strong> All actions are logged; human review is required for policy changes</li>
+                </ul>
+            </div>
+
+            <div class="philosophy-box">
+                <h4>Why No IAM Mutation</h4>
+                <p>The responder Lambda explicitly avoids modifying IAM:</p>
+                <ul>
+                    <li>Rate limiting is a security control working as intended—AWS handles the unlock automatically</li>
+                    <li>Policy mismatches require policy review, not programmatic fixes</li>
+                    <li>MFA device issues require user self-service or verified admin intervention</li>
+                </ul>
+            </div>
+
+            <div class="philosophy-box">
+                <h4>Detection vs. Analysis Separation</h4>
+                <ul>
+                    <li><strong>EventBridge:</strong> Real-time detection (low latency, pattern matching)</li>
+                    <li><strong>CloudWatch Insights:</strong> Post-hoc analysis (investigation, correlation, historical queries)</li>
+                    <li><strong>Dashboard:</strong> Situational awareness (volume trends, resolution metrics)</li>
+                </ul>
+                <p>This separation allows each tool to serve its optimal use case without conflating concerns.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>What This Is / Is Not</h2>
+            <div class="what-is-not">
+                <h4>What This Is</h4>
+                <ul>
+                    <li><strong>Detection system:</strong> Identifies MFA failure patterns in CloudTrail events</li>
+                    <li><strong>Incident tracking:</strong> Stores incidents in DynamoDB with full event context</li>
+                    <li><strong>Alerting pipeline:</strong> SNS notifications for response teams</li>
+                    <li><strong>Assisted remediation:</strong> Automated state updates for rate limiting scenarios (after cooldown)</li>
+                    <li><strong>Investigation tooling:</strong> CloudWatch Insights queries and dashboard for analysis</li>
+                    <li><strong>Operational documentation:</strong> Runbooks with detection signals and resolution steps</li>
+                </ul>
+            </div>
+
+            <div class="what-is-not">
+                <h4>What This Is Not</h4>
+                <ul>
+                    <li><strong>Not a SaaS product:</strong> This is infrastructure-as-code for incident response workflows</li>
+                    <li><strong>Not a public API:</strong> Lambda functions are deployed in your AWS account, not exposed publicly</li>
+                    <li><strong>Not an IAM management tool:</strong> Does not modify IAM users, policies, or MFA devices</li>
+                    <li><strong>Not a security scanner:</strong> Focuses on operational response, not vulnerability assessment</li>
+                    <li><strong>Not a replacement for SIEM:</strong> Complements existing security tooling with AWS-native detection</li>
+                    <li><strong>Not fully automated remediation:</strong> Only rate limiting scenarios have assisted remediation; others require manual intervention</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Technical Details</h2>
+            <h3>Architecture Components</h3>
+            <ul>
+                <li><strong>Lambda Functions:</strong> Dual-mode simulator/detector (Python 3.11) and responder for assisted remediation</li>
+                <li><strong>EventBridge Rules:</strong> Pattern matching for ConsoleLogin failures and AccessDenied events</li>
+                <li><strong>DynamoDB:</strong> Incident storage with TTL (7 days default)</li>
+                <li><strong>SNS:</strong> Alert notifications for incident detection and resolution</li>
+                <li><strong>CloudWatch:</strong> Metrics, logs, Insights queries, and 4-widget dashboard</li>
+            </ul>
+
+            <h3>Detection Patterns</h3>
+            <p>EventBridge rules match:</p>
+            <ul>
+                <li><code>source = ["aws.signin"]</code> with <code>eventName = ["ConsoleLogin"]</code> and <code>errorMessage</code> present</li>
+                <li><code>errorCode = ["AccessDenied", "UnauthorizedAccess"]</code> from IAM, S3, EC2, STS</li>
+            </ul>
+
+            <h3>CloudWatch Insights Queries</h3>
+            <p>Pre-built queries for each scenario:</p>
+            <ul>
+                <li><code>queries/mfa-auth-failure.sql</code> — Failed console logins with MFAUsed=No</li>
+                <li><code>queries/rate-limiting.sql</code> — Aggregated failure counts by user/IP</li>
+                <li><code>queries/policy-mismatch.sql</code> — AccessDenied with mfaAuthenticated=true</li>
+            </ul>
+        </section>
+
+        <section class="links">
+            <h3>Repository Links</h3>
+            <ul>
+                <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator">GitHub Repository</a> — Full source code and Terraform infrastructure</li>
+                <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/tree/main/incidents">Incident Runbooks</a> — Detailed runbooks for all three scenarios</li>
+                <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/tree/main/queries">CloudWatch Insights Queries</a> — Detection and investigation queries</li>
+                <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/tree/main/lambda">Lambda Functions</a> — Simulator/detector and responder code</li>
+                <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/tree/main/terraform">Terraform Infrastructure</a> — Infrastructure-as-code definitions</li>
+            </ul>
+        </section>
+    </div>
+</body>
+</html>
+
