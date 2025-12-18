@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" font-family="Arial, sans-serif" font-size="12">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f8f9fa"/>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#333">AWS MFA Incident Detection Architecture</text>
+  
+  <!-- CloudTrail -->
+  <rect x="50" y="60" width="150" height="60" rx="5" fill="#FF9900" stroke="#333" stroke-width="2"/>
+  <text x="125" y="85" text-anchor="middle" font-weight="bold" fill="white">CloudTrail</text>
+  <text x="125" y="105" text-anchor="middle" font-size="10" fill="white">Authentication Events</text>
+  
+  <!-- Arrow from CloudTrail to EventBridge -->
+  <path d="M 200 90 L 250 90" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- EventBridge -->
+  <rect x="250" y="60" width="150" height="60" rx="5" fill="#FF9900" stroke="#333" stroke-width="2"/>
+  <text x="325" y="85" text-anchor="middle" font-weight="bold" fill="white">EventBridge</text>
+  <text x="325" y="105" text-anchor="middle" font-size="10" fill="white">Rules</text>
+  
+  <!-- EventBridge Rules -->
+  <rect x="260" y="130" width="60" height="40" rx="3" fill="#FFB84D" stroke="#333" stroke-width="1"/>
+  <text x="290" y="150" text-anchor="middle" font-size="9" fill="#333">ConsoleLogin</text>
+  <text x="290" y="165" text-anchor="middle" font-size="9" fill="#333">Failure</text>
+  
+  <rect x="330" y="130" width="60" height="40" rx="3" fill="#FFB84D" stroke="#333" stroke-width="1"/>
+  <text x="360" y="150" text-anchor="middle" font-size="9" fill="#333">AccessDenied</text>
+  <text x="360" y="165" text-anchor="middle" font-size="9" fill="#333">Rule</text>
+  
+  <!-- Arrows from EventBridge rules to Lambda -->
+  <path d="M 290 170 L 400 220" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 360 170 L 400 220" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Lambda Function -->
+  <rect x="400" y="200" width="150" height="80" rx="5" fill="#FF9900" stroke="#333" stroke-width="2"/>
+  <text x="475" y="225" text-anchor="middle" font-weight="bold" fill="white">Lambda Function</text>
+  <text x="475" y="245" text-anchor="middle" font-size="10" fill="white">Dual Mode</text>
+  <text x="475" y="260" text-anchor="middle" font-size="9" fill="white">- Detector</text>
+  <text x="475" y="275" text-anchor="middle" font-size="9" fill="white">- Simulator</text>
+  
+  <!-- Arrows from Lambda to downstream services -->
+  <path d="M 475 300 L 200 380" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 475 300 L 400 380" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 475 300 L 600 380" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- DynamoDB -->
+  <rect x="150" y="380" width="100" height="60" rx="5" fill="#FF9900" stroke="#333" stroke-width="2"/>
+  <text x="200" y="405" text-anchor="middle" font-weight="bold" fill="white">DynamoDB</text>
+  <text x="200" y="425" text-anchor="middle" font-size="10" fill="white">Incidents</text>
+  
+  <!-- SNS -->
+  <rect x="350" y="380" width="100" height="60" rx="5" fill="#FF9900" stroke="#333" stroke-width="2"/>
+  <text x="400" y="405" text-anchor="middle" font-weight="bold" fill="white">SNS</text>
+  <text x="400" y="425" text-anchor="middle" font-size="10" fill="white">Alerts</text>
+  
+  <!-- CloudWatch -->
+  <rect x="550" y="380" width="100" height="60" rx="5" fill="#FF9900" stroke="#333" stroke-width="2"/>
+  <text x="600" y="405" text-anchor="middle" font-weight="bold" fill="white">CloudWatch</text>
+  <text x="600" y="425" text-anchor="middle" font-size="10" fill="white">Metrics</text>
+  
+  <!-- CloudWatch Insights (separate) -->
+  <rect x="550" y="480" width="150" height="50" rx="5" fill="#FFB84D" stroke="#333" stroke-width="2"/>
+  <text x="625" y="500" text-anchor="middle" font-weight="bold" fill="#333">CloudWatch Insights</text>
+  <text x="625" y="520" text-anchor="middle" font-size="10" fill="#333">Post-hoc Analysis</text>
+  
+  <!-- Arrow from CloudWatch to Insights -->
+  <path d="M 600 440 L 625 480" stroke="#333" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+  
+  <!-- Simulator Mode Input (CLI) -->
+  <rect x="600" y="200" width="120" height="50" rx="5" fill="#e0e0e0" stroke="#333" stroke-width="2" stroke-dasharray="3,3"/>
+  <text x="660" y="220" text-anchor="middle" font-weight="bold" fill="#333">CLI Invoke</text>
+  <text x="660" y="240" text-anchor="middle" font-size="9" fill="#333">(Simulator Mode)</text>
+  
+  <!-- Arrow from CLI to Lambda -->
+  <path d="M 600 225 L 550 240" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+  
+  <!-- Arrowhead marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+    </marker>
+  </defs>
+</svg>
+

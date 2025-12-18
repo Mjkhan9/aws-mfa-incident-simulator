@@ -190,5 +190,5 @@ The DynamoDB table shows both OPEN and RESOLVED incidents, with `resolution_time
 
 ---
 
-*Last Updated: December 2024*
+*Last Updated: December 2025*
 

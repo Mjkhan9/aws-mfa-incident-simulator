@@ -162,5 +162,5 @@ Each DynamoDB record contains the `detection_signal` field with CloudTrail event
 
 ---
 
-*Last Updated: December 2024*
+*Last Updated: December 2025*
 

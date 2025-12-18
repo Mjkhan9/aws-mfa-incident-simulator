@@ -373,6 +373,9 @@
         <header>
             <h1>AWS MFA Incident Response Simulator</h1>
             <p class="subtitle">Detection, Investigation, and Assisted Remediation</p>
+            <div style="margin-top: 1rem;">
+                <img src="https://github.com/Mjkhan9/aws-mfa-incident-simulator/actions/workflows/validate.yml/badge.svg" alt="CI Status" style="vertical-align: middle;">
+            </div>
         </header>
 
         <section>
@@ -431,6 +434,11 @@
         </section>
 
         <section>
+            <h2>Architecture</h2>
+            <div style="text-align: center; margin: 2rem 0;">
+                <img src="architecture.svg" alt="AWS MFA Incident Detection Architecture" style="max-width: 100%; height: auto; border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; background: #f8f9fa;">
+            </div>
+
             <h2>Incident Flow</h2>
             <div class="flow-diagram">┌─────────────────────────────────────────────────────────────────────┐
 │                         Detection Pipeline                          │
@@ -572,6 +580,55 @@
                     <li><strong>Not fully automated remediation:</strong> Only rate limiting scenarios have assisted remediation; others require manual intervention</li>
                 </ul>
             </div>
+        </section>
+
+        <section>
+            <h2>Cost Estimate</h2>
+            <p>This project is designed to run within AWS Free Tier limits for development and demonstration purposes.</p>
+            <div style="overflow-x: auto; margin: 1.5rem 0;">
+                <table style="width: 100%; border-collapse: collapse; background: #f8f9fa; border-radius: 6px;">
+                    <thead>
+                        <tr style="background: #2c3e50; color: white;">
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">Resource</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">Configuration</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">Estimated Monthly Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 0.75rem;"><strong>Lambda</strong></td>
+                            <td style="padding: 0.75rem;">2 functions, ~1000 invocations</td>
+                            <td style="padding: 0.75rem;">$0.00 (Free Tier: 1M requests)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 0.75rem;"><strong>DynamoDB</strong></td>
+                            <td style="padding: 0.75rem;">On-demand, &lt;1GB storage</td>
+                            <td style="padding: 0.75rem;">$0.25</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 0.75rem;"><strong>CloudWatch</strong></td>
+                            <td style="padding: 0.75rem;">Logs, metrics, 1 dashboard</td>
+                            <td style="padding: 0.75rem;">$0.50</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 0.75rem;"><strong>SNS</strong></td>
+                            <td style="padding: 0.75rem;">&lt;1000 notifications</td>
+                            <td style="padding: 0.75rem;">$0.00 (Free Tier: 1M publishes)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 0.75rem;"><strong>EventBridge</strong></td>
+                            <td style="padding: 0.75rem;">&lt;1M events</td>
+                            <td style="padding: 0.75rem;">$0.00 (Free Tier)</td>
+                        </tr>
+                        <tr style="background: #e8f5e9; font-weight: 600;">
+                            <td style="padding: 0.75rem;"><strong>Total</strong></td>
+                            <td style="padding: 0.75rem;"></td>
+                            <td style="padding: 0.75rem;"><strong>&lt; $1.00/month</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p style="font-size: 0.9rem; color: #7f8c8d; margin-top: 1rem;"><em>Costs may vary with usage. Estimates based on US-East-1 pricing as of December 2025.</em></p>
         </section>
 
         <section>

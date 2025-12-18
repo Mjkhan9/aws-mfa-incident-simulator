@@ -24,6 +24,8 @@ Thumbs.db
 
 # Responses
 response.json
+r.json
 r1.json
 r2.json
+*.response.json
 

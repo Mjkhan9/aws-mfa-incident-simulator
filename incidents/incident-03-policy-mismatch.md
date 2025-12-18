@@ -223,5 +223,5 @@ Each policy mismatch incident in DynamoDB includes the `detection_signal` with:
 
 ---
 
-*Last Updated: December 2024*
+*Last Updated: December 2025*
 

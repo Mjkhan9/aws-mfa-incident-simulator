@@ -14,6 +14,7 @@ I built this to demonstrate incident response workflows—not just infrastructur
 The Lambda automatically detects which mode based on the event structure.
 
 [![AWS](https://img.shields.io/badge/AWS-CloudTrail%20|%20EventBridge%20|%20Lambda-FF9900?logo=amazon-aws)](https://aws.amazon.com/)
+![Validate](https://github.com/Mjkhan9/aws-mfa-incident-simulator/actions/workflows/validate.yml/badge.svg)
 
 ---
 
@@ -74,6 +75,8 @@ Simulates **3 real-world MFA failure scenarios** with:
 ---
 
 ## Architecture
+
+![Architecture Diagram](docs/architecture.svg)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -153,12 +156,28 @@ aws lambda invoke \
 
 ---
 
+## Cost Estimate
+
+This project is designed to run within AWS Free Tier limits for development and demonstration purposes.
+
+| Resource | Configuration | Estimated Monthly Cost |
+|----------|---------------|----------------------|
+| Lambda | 2 functions, ~1000 invocations | $0.00 (Free Tier: 1M requests) |
+| DynamoDB | On-demand, <1GB storage | $0.25 |
+| CloudWatch | Logs, metrics, 1 dashboard | $0.50 |
+| SNS | <1000 notifications | $0.00 (Free Tier: 1M publishes) |
+| EventBridge | <1M events | $0.00 (Free Tier) |
+| **Total** | | **< $1.00/month** |
+
+*Costs may vary with usage. Estimates based on US-East-1 pricing as of December 2025.*
+
+---
+
 ## Project Structure
 
 ```
 aws-mfa-incident-simulator/
 ├── README.md
-├── TALKING_POINTS.md           # Interview narratives
 │
 ├── lambda/
 │   ├── simulator/              # Incident generation
