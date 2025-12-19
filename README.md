@@ -2,7 +2,7 @@
 
 Dual-mode incident detection system for MFA authentication failures: supports both **live detection** from CloudTrail events and **simulation mode** for testing and demos.
 
-I built this to demonstrate incident response workflows—not just infrastructure building, but the operational thinking required to detect, diagnose, and resolve authentication failures in production environments.
+This system detects and classifies MFA-related authentication failures in AWS by correlating CloudTrail signals in real time and during controlled simulation, enabling investigation without automated identity mutation.
 
 ## Operating Modes
 
@@ -30,6 +30,29 @@ Simulates **3 real-world MFA failure scenarios** with:
 | **Alerting Pipeline** | SNS notifications on incident detection |
 | **Incident Tracking** | Automated status updates and alerting for response teams |
 | **Incident Runbooks** | Step-by-step resolution documentation with console evidence |
+
+---
+
+## Automation Boundaries (Intentional Non-Actions)
+
+This system does **not**:
+- Reset MFA devices
+- Disable IAM users
+- Modify policies automatically
+
+Reason:
+MFA failures often reflect user-side or policy-evaluation issues where automated remediation risks account lockout or privilege regression. This system prioritizes detection, classification, and evidence preservation over action.
+
+---
+
+## Signal Ambiguity & False Positives
+
+AWS does not emit explicit "token expired" errors for MFA failures. Detection relies on:
+- Temporal correlation
+- Prior successful MFA events
+- Absence of credential compromise indicators
+
+As a result, findings are classified as "consistent with" causes, not asserted as root cause without admin review.
 
 ---
 
@@ -245,4 +268,3 @@ University of Houston
 ## License
 
 MIT License - Created for educational and portfolio purposes.
-
