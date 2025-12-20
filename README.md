@@ -1,5 +1,10 @@
 # AWS MFA Incident Response Simulator
 
+![CI](https://github.com/Mjkhan9/aws-mfa-incident-simulator/actions/workflows/ci.yml/badge.svg)
+[![AWS](https://img.shields.io/badge/AWS-CloudTrail%20|%20EventBridge%20|%20Lambda-FF9900?logo=amazon-aws)](https://aws.amazon.com/)
+![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
+![Terraform](https://img.shields.io/badge/Terraform-1.6+-623CE4?logo=terraform)
+
 Dual-mode incident detection system for MFA authentication failures: supports both **live detection** from CloudTrail events and **simulation mode** for testing and demos.
 
 This system detects and classifies MFA-related authentication failures in AWS by correlating CloudTrail signals in real time and during controlled simulation, enabling investigation without automated identity mutation.
@@ -12,9 +17,6 @@ This system detects and classifies MFA-related authentication failures in AWS by
 | **Simulator** | Manual CLI invoke with test payload | Demos, testing, development |
 
 The Lambda automatically detects which mode based on the event structure.
-
-[![AWS](https://img.shields.io/badge/AWS-CloudTrail%20|%20EventBridge%20|%20Lambda-FF9900?logo=amazon-aws)](https://aws.amazon.com/)
-![Validate](https://github.com/Mjkhan9/aws-mfa-incident-simulator/actions/workflows/validate.yml/badge.svg)
 
 ---
 
@@ -30,6 +32,52 @@ Simulates **3 real-world MFA failure scenarios** with:
 | **Alerting Pipeline** | SNS notifications on incident detection |
 | **Incident Tracking** | Automated status updates and alerting for response teams |
 | **Incident Runbooks** | Step-by-step resolution documentation with console evidence |
+
+---
+
+## Testing
+
+This project includes automated unit tests using **pytest** and **moto** for AWS mocking.
+
+### What We Test
+
+Each test case maps directly to one documented incident scenario below.
+
+- CloudTrail event classification logic
+- MFA failure detection (failed logins + successful logins without MFA)
+- Policy mismatch detection (AccessDenied with MFA session)
+- Simulator mode scenario generation
+- Return value structure
+
+### What We Don't Test
+
+- AWS service availability
+- DynamoDB write operations
+- SNS notification delivery
+
+Temporal correlation logic is unit-tested independently of AWS service calls.
+
+### Run Tests Locally
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage (optional)
+pytest tests/ --cov=lambda --cov-report=term-missing
+```
+
+### Test Structure
+
+```
+tests/
+├── __init__.py
+├── conftest.py          # Pytest fixtures, moto mocks, realistic CloudTrail events
+└── test_simulator.py    # Unit tests for detection logic
+```
 
 ---
 
@@ -201,6 +249,15 @@ This project is designed to run within AWS Free Tier limits for development and 
 ```
 aws-mfa-incident-simulator/
 ├── README.md
+├── requirements.txt            # Root deps for CI
+│
+├── .github/workflows/
+│   └── ci.yml                  # Automated testing + validation
+│
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py             # Fixtures, moto mocks
+│   └── test_simulator.py       # Unit tests
 │
 ├── lambda/
 │   ├── simulator/              # Incident generation
@@ -231,8 +288,8 @@ aws-mfa-incident-simulator/
 │   ├── rate-limiting.sql
 │   └── policy-mismatch.sql
 │
-├── screenshots/
-│   └── (console evidence captured during incidents)
+├── docs/
+│   └── index.html              # Documentation site
 │
 └── LICENSE
 ```
@@ -252,6 +309,7 @@ aws-mfa-incident-simulator/
 - **Signal precision:** AWS doesn't emit "token expired" explicitly; you detect patterns
 - **Scope discipline:** 3 clean scenarios > 5 half-baked ones
 - **Interview framing:** Language matters—"consistent with" vs "caused by"
+- **Testing discipline:** Automated validation on every push signals engineering maturity
 
 ---
 

@@ -70,6 +70,7 @@ def process_cloudtrail_event(event: Dict[str, Any]) -> Dict[str, Any]:
     
     Detects:
     - ConsoleLogin failures (MFA auth failure pattern)
+    - ConsoleLogin success without MFA (MFA not enforced)
     - AccessDenied errors (policy mismatch pattern)
     """
     detail_type = event.get('detail-type', '')
@@ -87,17 +88,31 @@ def process_cloudtrail_event(event: Dict[str, Any]) -> Dict[str, Any]:
     
     incident = None
     
-    # Pattern 1: Console Login Failure (MFA auth failure)
-    if event_name == 'ConsoleLogin' and error_message:
+    # Pattern 1: Console Login without MFA (failed OR successful without MFA)
+    if event_name == 'ConsoleLogin':
         additional_data = detail.get('additionalEventData', {})
         mfa_used = additional_data.get('MFAUsed', 'Yes')
+        response_elements = detail.get('responseElements', {})
+        login_result = response_elements.get('ConsoleLogin', '')
         
-        if mfa_used == 'No' or error_message:
-            incident = create_mfa_auth_failure_incident(
-                user=username,
-                source_ip=source_ip,
-                cloudtrail_detail=detail
-            )
+        # Detect MFA failure: either failed login or successful login without MFA
+        if mfa_used == 'No':
+            if error_message:
+                # Failed login attempt without MFA
+                incident = create_mfa_auth_failure_incident(
+                    user=username,
+                    source_ip=source_ip,
+                    cloudtrail_detail=detail,
+                    failure_type='authentication_failed'
+                )
+            elif login_result == 'Success':
+                # Successful login WITHOUT MFA (policy gap)
+                incident = create_mfa_auth_failure_incident(
+                    user=username,
+                    source_ip=source_ip,
+                    cloudtrail_detail=detail,
+                    failure_type='mfa_not_enforced'
+                )
     
     # Pattern 2: AccessDenied (Policy mismatch)
     elif error_code in ['AccessDenied', 'UnauthorizedAccess']:
@@ -190,31 +205,46 @@ def process_simulator_event(event: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def create_mfa_auth_failure_incident(user: str, source_ip: str, cloudtrail_detail: Dict) -> Dict[str, Any]:
+def create_mfa_auth_failure_incident(
+    user: str, 
+    source_ip: str, 
+    cloudtrail_detail: Dict,
+    failure_type: str = 'authentication_failed'
+) -> Dict[str, Any]:
     """Create incident from real CloudTrail ConsoleLogin failure."""
     incident_id = f"MFA-AUTH-{uuid.uuid4().hex[:8].upper()}"
     timestamp = datetime.now(timezone.utc).isoformat()
     
+    # Determine severity based on failure type
+    if failure_type == 'mfa_not_enforced':
+        severity = 'HIGH'  # Successful login without MFA is more severe
+        description = f'Console login WITHOUT MFA for user {user} - MFA policy not enforced'
+    else:
+        severity = 'MEDIUM'
+        description = f'MFA authentication failure for user {user} consistent with token expiration or timing issue'
+    
     return {
         'incident_id': incident_id,
         'scenario': 'mfa_auth_failure',
-        'severity': 'MEDIUM',
+        'severity': severity,
         'status': 'OPEN',
         'timestamp': timestamp,
         'created_at': int(time.time()),
         'user': user,
         'source_ip': source_ip,
         'detection_source': 'cloudtrail',
+        'failure_type': failure_type,
         'detection_signal': {
             'event_name': 'ConsoleLogin',
             'event_source': 'signin.amazonaws.com',
-            'error_message': cloudtrail_detail.get('errorMessage', 'Failed authentication'),
+            'error_message': cloudtrail_detail.get('errorMessage', ''),
             'event_time': cloudtrail_detail.get('eventTime', ''),
             'aws_region': cloudtrail_detail.get('awsRegion', ''),
+            'login_result': cloudtrail_detail.get('responseElements', {}).get('ConsoleLogin', ''),
             'additional_event_data': cloudtrail_detail.get('additionalEventData', {})
         },
-        'description': f'MFA authentication failure for user {user} consistent with token expiration or timing issue',
-        'recommended_action': 'User must re-authenticate with valid MFA token',
+        'description': description,
+        'recommended_action': 'User must re-authenticate with valid MFA token' if failure_type == 'authentication_failed' else 'Review MFA enforcement policy for this user/role',
         'auto_remediation': False,
         'environment': ENVIRONMENT,
         'ttl': int(time.time()) + (7 * 24 * 60 * 60)
