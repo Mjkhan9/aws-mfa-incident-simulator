@@ -408,11 +408,16 @@
                 <p><code>ConsoleLogin</code> event with:</p>
                 <ul>
                     <li><code>additionalEventData.MFAUsed = "No"</code></li>
-                    <li><code>errorMessage</code> present (typically "Failed authentication")</li>
+                    <li><code>errorMessage</code> present (typically "Failed authentication") OR <code>responseElements.ConsoleLogin = "Success"</code></li>
                     <li>Optional correlation: Prior successful MFA login within 15-minute window</li>
                 </ul>
             </div>
-            <p><strong>Why "consistent with" matters:</strong> AWS doesn't emit "token expired" explicitly. The pattern—failed login with MFAUsed=No, especially after a recent successful MFA session—is consistent with token expiration, but could also indicate user error or clock drift. The language reflects operational uncertainty.</p>
+            <p><strong>Two failure modes detected:</strong></p>
+            <ul>
+                <li><strong>authentication_failed:</strong> Failed login attempt without MFA (severity: MEDIUM)</li>
+                <li><strong>mfa_not_enforced:</strong> Successful login WITHOUT MFA - indicates policy gap (severity: HIGH) ← <em>New detection</em></li>
+            </ul>
+            <p><strong>Why "consistent with" matters:</strong> AWS doesn't emit "token expired" explicitly. The pattern—failed login with MFAUsed=No, especially after a recent successful MFA session—is consistent with token expiration, but could also indicate user error or clock drift. The language reflects operational uncertainty. The system now also detects successful logins without MFA, which indicates a more serious policy enforcement gap.</p>
 
             <h3>2. Rate Limiting / Account Lockout</h3>
             <div class="signal-box">
@@ -589,6 +594,36 @@
         </section>
 
         <section>
+            <h2>Testing & Quality Assurance</h2>
+            <div class="philosophy-box">
+                <h4>Comprehensive Test Suite</h4>
+                <p>The project includes <strong>19 unit tests</strong> covering all detection scenarios:</p>
+                <ul>
+                    <li><strong>Event Classification:</strong> CloudTrail vs simulator event detection (3 tests)</li>
+                    <li><strong>MFA Failure Detection:</strong> Failed logins and successful logins without MFA (3 tests)</li>
+                    <li><strong>Policy Mismatch Detection:</strong> AccessDenied with/without MFA session (2 tests)</li>
+                    <li><strong>Simulator Mode:</strong> All 3 scenarios + error handling (4 tests)</li>
+                    <li><strong>Incident Structure:</strong> Required fields validation (2 tests)</li>
+                    <li><strong>Burst Detection:</strong> Rate limiting pattern detection (1 test)</li>
+                    <li><strong>Edge Cases:</strong> Missing fields, empty data handling (3 tests)</li>
+                    <li><strong>Integration:</strong> Full flow with mocked AWS services (1 test)</li>
+                </ul>
+                <p><strong>Test Infrastructure:</strong> Uses <code>pytest</code> and <code>moto</code> for AWS service mocking, allowing tests to run without hitting real AWS infrastructure.</p>
+            </div>
+
+            <div class="philosophy-box">
+                <h4>CI/CD Pipeline</h4>
+                <p>Automated quality gates via GitHub Actions:</p>
+                <ul>
+                    <li><strong>Unit Tests:</strong> Runs all 19 tests on every push/PR</li>
+                    <li><strong>Terraform Validation:</strong> Format check and validate infrastructure code</li>
+                    <li><strong>Python Linting:</strong> Code quality checks with flake8</li>
+                </ul>
+                <p>All tests must pass before merging to main branch. See the <a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/actions">CI status</a> for current build status.</p>
+            </div>
+        </section>
+
+        <section>
             <h2>Technical Details</h2>
             <h3>Architecture Components</h3>
             <ul>
@@ -597,14 +632,24 @@
                 <li><strong>DynamoDB:</strong> Incident storage with TTL (7 days default)</li>
                 <li><strong>SNS:</strong> Alert notifications for incident detection and resolution</li>
                 <li><strong>CloudWatch:</strong> Metrics, logs, Insights queries, and 4-widget dashboard</li>
+                <li><strong>Test Suite:</strong> 19 unit tests with pytest and moto for AWS mocking</li>
+                <li><strong>CI/CD:</strong> GitHub Actions workflow for automated testing and validation</li>
             </ul>
 
             <h3>Detection Patterns</h3>
             <p>EventBridge rules match:</p>
             <ul>
-                <li><code>source = ["aws.signin"]</code> with <code>eventName = ["ConsoleLogin"]</code> and <code>errorMessage</code> present</li>
+                <li><code>source = ["aws.signin"]</code> with <code>eventName = ["ConsoleLogin"]</code> and:
+                    <ul>
+                        <li><code>errorMessage</code> present (failed login), OR</li>
+                        <li><code>responseElements.ConsoleLogin = "Success"</code> with <code>additionalEventData.MFAUsed = "No"</code> (successful login without MFA)</li>
+                    </ul>
+                </li>
                 <li><code>errorCode = ["AccessDenied", "UnauthorizedAccess"]</code> from IAM, S3, EC2, STS</li>
             </ul>
+            <div class="note">
+                <strong>Enhanced Detection:</strong> The system now detects both failed logins without MFA (authentication_failed, MEDIUM severity) and successful logins without MFA (mfa_not_enforced, HIGH severity). The latter indicates a policy enforcement gap where MFA should be required but isn't being enforced.
+            </div>
 
             <h3>CloudWatch Insights Queries</h3>
             <p>Pre-built queries for each scenario:</p>
@@ -619,6 +664,8 @@
             <h3>Repository Links</h3>
             <ul>
                 <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator">GitHub Repository</a> — Full source code and Terraform infrastructure</li>
+                <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/actions">CI/CD Pipeline</a> — Automated testing and validation workflows</li>
+                <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/tree/main/tests">Test Suite</a> — 19 unit tests with pytest and moto</li>
                 <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/tree/main/incidents">Incident Runbooks</a> — Detailed runbooks for all three scenarios</li>
                 <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/tree/main/queries">CloudWatch Insights Queries</a> — Detection and investigation queries</li>
                 <li><a href="https://github.com/Mjkhan9/aws-mfa-incident-simulator/tree/main/lambda">Lambda Functions</a> — Simulator/detector and responder code</li>
