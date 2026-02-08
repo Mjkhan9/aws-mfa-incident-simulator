@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFA Incident Detection Dashboard — Anomaly Intelligence</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #050510; color: #e0e0e0; }
+        .header { background: linear-gradient(135deg, #ef4444, #a855f7); padding: 24px 40px; }
+        .header h1 { font-size: 22px; color: white; }
+        .header p { color: #e0c0f0; font-size: 13px; margin-top: 6px; }
+        .container { padding: 24px 40px; }
+        .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat { background: #0a0e1a; border: 1px solid #1e1e3a; border-radius: 10px; padding: 20px; text-align: center; }
+        .stat-val { font-size: 32px; font-weight: 800; }
+        .stat-lbl { font-size: 11px; color: #666; margin-top: 6px; }
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .card { background: #0a0e1a; border: 1px solid #1e1e3a; border-radius: 12px; padding: 24px; }
+        .card h3 { font-size: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        .chart-area { height: 250px; position: relative; display: flex; align-items: flex-end; gap: 3px; padding-top: 20px; }
+        .bar { flex: 1; border-radius: 3px 3px 0 0; transition: height 0.5s; position: relative; min-width: 4px; cursor: pointer; }
+        .bar:hover { opacity: 0.8; }
+        .bar:hover::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1e1e3a; padding: 4px 8px; border-radius: 4px; font-size: 10px; white-space: nowrap; }
+        .timeline { display: flex; justify-content: space-between; font-size: 10px; color: #444; margin-top: 8px; }
+        .incident-list { list-style: none; }
+        .incident { padding: 14px; margin-bottom: 8px; background: #12122a; border-radius: 8px; border-left: 4px solid; cursor: pointer; transition: all 0.2s; }
+        .incident:hover { background: #1a1a3a; }
+        .incident.sev-critical { border-color: #ef4444; }
+        .incident.sev-high { border-color: #f59e0b; }
+        .incident.sev-medium { border-color: #0078d4; }
+        .incident-header { display: flex; justify-content: space-between; font-size: 13px; }
+        .incident-type { font-weight: 600; }
+        .incident-time { color: #666; font-size: 11px; }
+        .incident-detail { font-size: 12px; color: #888; margin-top: 6px; }
+        .sev-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .sev-critical .sev-badge { background: #ef444422; color: #ef4444; }
+        .sev-high .sev-badge { background: #f59e0b22; color: #f59e0b; }
+        .sev-medium .sev-badge { background: #0078d422; color: #0078d4; }
+        .anomaly-section { margin-top: 24px; }
+        .anomaly-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+        .anomaly-card { background: #0a0e1a; border: 1px solid #1e1e3a; border-radius: 12px; padding: 20px; text-align: center; }
+        .anomaly-score { font-size: 48px; font-weight: 800; }
+        .anomaly-ring { width: 100px; height: 100px; border-radius: 50%; margin: 12px auto; position: relative; }
+        .anomaly-ring svg { transform: rotate(-90deg); }
+        .anomaly-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+        .anomaly-desc { font-size: 12px; color: #666; margin-top: 8px; }
+        .scenario-btn { display: inline-block; padding: 8px 16px; margin: 4px; border-radius: 6px; border: 1px solid #2a2a4a; background: #12122a; color: #a0a0c0; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+        .scenario-btn:hover { border-color: #a855f7; color: #a855f7; }
+        .scenario-btn.active { background: #a855f722; border-color: #a855f7; color: #a855f7; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 MFA Incident Detection Dashboard — AI Anomaly Intelligence</h1>
+        <p>Real-time authentication anomaly detection · CloudTrail → EventBridge → Lambda → DynamoDB</p>
+    </div>
+    <div class="container">
+        <div class="stats">
+            <div class="stat"><div class="stat-val" style="color:#ef4444;" id="totalIncidents">0</div><div class="stat-lbl">Total Incidents (24h)</div></div>
+            <div class="stat"><div class="stat-val" style="color:#f59e0b;" id="mfaFailures">0</div><div class="stat-lbl">MFA Failures</div></div>
+            <div class="stat"><div class="stat-val" style="color:#a855f7;" id="rateLimits">0</div><div class="stat-lbl">Rate Limited</div></div>
+            <div class="stat"><div class="stat-val" style="color:#0078d4;" id="policyDenied">0</div><div class="stat-lbl">Policy Denied</div></div>
+            <div class="stat"><div class="stat-val" style="color:#00d4aa;" id="resolved">0</div><div class="stat-lbl">Resolved</div></div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <h3 style="margin-bottom:12px;">Simulate Scenario</h3>
+            <button class="scenario-btn" onclick="runScenario('mfa-failure')">MFA Auth Failure</button>
+            <button class="scenario-btn" onclick="runScenario('rate-limit')">Rate Limiting</button>
+            <button class="scenario-btn" onclick="runScenario('policy-mismatch')">Policy Mismatch</button>
+            <button class="scenario-btn" onclick="runScenario('all')">Run All 3</button>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Authentication Events (24h) <span style="font-size:12px;color:#666;">Failed vs Successful</span></h3>
+                <div class="chart-area" id="chart"></div>
+                <div class="timeline"><span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>Now</span></div>
+            </div>
+            <div class="card">
+                <h3>Active Incidents</h3>
+                <ul class="incident-list" id="incidents"></ul>
+            </div>
+        </div>
+
+        <div class="anomaly-section">
+            <h3>Anomaly Scores — Azure AI Analysis</h3>
+            <div class="anomaly-grid">
+                <div class="anomaly-card">
+                    <div class="anomaly-label">Auth Pattern Anomaly</div>
+                    <div class="anomaly-ring">
+                        <svg width="100" height="100"><circle cx="50" cy="50" r="42" fill="none" stroke="#1e1e3a" stroke-width="6"/><circle cx="50" cy="50" r="42" fill="none" stroke="#00d4aa" stroke-width="6" stroke-dasharray="264" id="ring1" stroke-dashoffset="264" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="anomaly-score" id="score1" style="color:#00d4aa;">0%</div>
+                    <div class="anomaly-desc">Login patterns vs 30-day baseline</div>
+                </div>
+                <div class="anomaly-card">
+                    <div class="anomaly-label">Geo Velocity Risk</div>
+                    <div class="anomaly-ring">
+                        <svg width="100" height="100"><circle cx="50" cy="50" r="42" fill="none" stroke="#1e1e3a" stroke-width="6"/><circle cx="50" cy="50" r="42" fill="none" stroke="#f59e0b" stroke-width="6" stroke-dasharray="264" id="ring2" stroke-dashoffset="264" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="anomaly-score" id="score2" style="color:#f59e0b;">0%</div>
+                    <div class="anomaly-desc">Impossible travel detection</div>
+                </div>
+                <div class="anomaly-card">
+                    <div class="anomaly-label">Privilege Escalation Risk</div>
+                    <div class="anomaly-ring">
+                        <svg width="100" height="100"><circle cx="50" cy="50" r="42" fill="none" stroke="#1e1e3a" stroke-width="6"/><circle cx="50" cy="50" r="42" fill="none" stroke="#ef4444" stroke-width="6" stroke-dasharray="264" id="ring3" stroke-dashoffset="264" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="anomaly-score" id="score3" style="color:#ef4444;">0%</div>
+                    <div class="anomaly-desc">IAM policy change attempts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Generate chart bars
+    const chart = document.getElementById('chart');
+    for (let i = 0; i < 48; i++) {
+        const success = 20 + Math.random() * 60;
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.style.height = success + '%';
+        bar.style.background = '#00d4aa44';
+        bar.dataset.tooltip = `${Math.floor(success)} auth events`;
+        chart.appendChild(bar);
+    }
+
+    let incidentCount = 0;
+    const scenarios = {
+        'mfa-failure': {
+            incidents: [
+                { sev: 'high', type: 'MFA Auth Failure', user: 'admin@company.com', ip: '203.0.113.42', detail: 'ConsoleLogin failed — MFAUsed: No, errorMessage: Failed authentication. Consistent with expired TOTP token.', action: 'User must re-authenticate with valid MFA token' }
+            ],
+            anomaly: [35, 20, 10],
+            chartSpike: { start: 38, count: 5, color: '#f59e0b' }
+        },
+        'rate-limit': {
+            incidents: [
+                { sev: 'critical', type: 'Rate Limiting Triggered', user: 'jsmith@company.com', ip: '198.51.100.15', detail: '12 failed ConsoleLogin attempts in 60-second window. Same userName, same sourceIPAddress. Account temporarily locked.', action: 'DynamoDB status updated → SNS alert sent → Cooldown period initiated' }
+            ],
+            anomaly: [72, 45, 30],
+            chartSpike: { start: 42, count: 4, color: '#ef4444' }
+        },
+        'policy-mismatch': {
+            incidents: [
+                { sev: 'medium', type: 'Policy Mismatch', user: 'dev-user@company.com', ip: '10.0.1.50', detail: 'Valid MFA session present but iam:AttachRolePolicy denied. IAM policy condition aws:MultiFactorAuthPresent evaluated but action not in allowed list.', action: 'Admin review required — check IAM policy conditions against intended permissions' }
+            ],
+            anomaly: [15, 10, 55],
+            chartSpike: { start: 45, count: 3, color: '#0078d4' }
+        }
+    };
+
+    function updateRing(id, pct) {
+        const circumference = 264;
+        const offset = circumference - (pct / 100) * circumference;
+        document.getElementById(id).style.strokeDashoffset = offset;
+    }
+
+    function runScenario(type) {
+        document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+
+        const types = type === 'all' ? ['mfa-failure', 'rate-limit', 'policy-mismatch'] : [type];
+        let delay = 0;
+
+        types.forEach(t => {
+            const s = scenarios[t];
+            s.incidents.forEach(inc => {
+                setTimeout(() => {
+                    incidentCount++;
+                    const li = document.createElement('li');
+                    li.className = `incident sev-${inc.sev}`;
+                    li.innerHTML = `
+                        <div class="incident-header">
+                            <span class="incident-type">${inc.type}</span>
+                            <span class="sev-badge">${inc.sev.toUpperCase()}</span>
+                        </div>
+                        <div class="incident-time">User: ${inc.user} · IP: ${inc.ip} · ${new Date().toLocaleTimeString()}</div>
+                        <div class="incident-detail">${inc.detail}</div>
+                        <div class="incident-detail" style="color:#00d4aa;margin-top:6px;">Response: ${inc.action}</div>
+                    `;
+                    document.getElementById('incidents').prepend(li);
+
+                    // Update stats
+                    document.getElementById('totalIncidents').textContent = incidentCount;
+                    if (t === 'mfa-failure') document.getElementById('mfaFailures').textContent = parseInt(document.getElementById('mfaFailures').textContent) + 1;
+                    if (t === 'rate-limit') document.getElementById('rateLimits').textContent = parseInt(document.getElementById('rateLimits').textContent) + 1;
+                    if (t === 'policy-mismatch') document.getElementById('policyDenied').textContent = parseInt(document.getElementById('policyDenied').textContent) + 1;
+
+                    // Chart spike
+                    for (let i = s.chartSpike.start; i < s.chartSpike.start + s.chartSpike.count && i < chart.children.length; i++) {
+                        chart.children[i].style.height = (70 + Math.random() * 30) + '%';
+                        chart.children[i].style.background = s.chartSpike.color;
+                    }
+
+                    // Anomaly rings
+                    setTimeout(() => {
+                        updateRing('ring1', Math.min(95, parseInt(document.getElementById('score1').textContent) + s.anomaly[0]));
+                        updateRing('ring2', Math.min(95, parseInt(document.getElementById('score2').textContent) + s.anomaly[1]));
+                        updateRing('ring3', Math.min(95, parseInt(document.getElementById('score3').textContent) + s.anomaly[2]));
+                        document.getElementById('score1').textContent = Math.min(95, parseInt(document.getElementById('score1').textContent || 0) + s.anomaly[0]) + '%';
+                        document.getElementById('score2').textContent = Math.min(95, parseInt(document.getElementById('score2').textContent || 0) + s.anomaly[1]) + '%';
+                        document.getElementById('score3').textContent = Math.min(95, parseInt(document.getElementById('score3').textContent || 0) + s.anomaly[2]) + '%';
+                    }, 500);
+
+                    // Auto-resolve after delay
+                    setTimeout(() => {
+                        document.getElementById('resolved').textContent = parseInt(document.getElementById('resolved').textContent) + 1;
+                        li.style.opacity = '0.5';
+                    }, 5000);
+
+                }, delay);
+                delay += 1200;
+            });
+        });
+    }
+    </script>
+</body>
+</html>
